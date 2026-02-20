@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -20,8 +20,15 @@ interface CartItem {
 
 export default function PublicStorefront() {
   const { storeId } = useParams<{ storeId: string }>();
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const navigate = useNavigate();
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    try { return JSON.parse(sessionStorage.getItem("cart") || "[]"); } catch { return []; }
+  });
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  useEffect(() => {
+    sessionStorage.setItem("cart", JSON.stringify(cart));
+  }, [cart]);
 
   const { data: store, isLoading: storeLoading } = useQuery({
     queryKey: ["public-store", storeId],
@@ -284,7 +291,11 @@ export default function PublicStorefront() {
             style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
           >
             {products.map((product) => (
-              <Card key={product.id} className="border-border/50 overflow-hidden group hover:shadow-lg transition-shadow">
+              <Card
+                key={product.id}
+                className="border-border/50 overflow-hidden group hover:shadow-lg transition-shadow cursor-pointer"
+                onClick={() => navigate(`/loja/${storeId}/produto/${product.id}`)}
+              >
                 <div className="aspect-square bg-muted relative overflow-hidden">
                   {product.photos && product.photos.length > 0 ? (
                     <img
@@ -304,7 +315,7 @@ export default function PublicStorefront() {
                   )}
                 </div>
                 <CardContent className="p-4">
-                  <p className="text-xs text-muted-foreground mb-1">#{product.id.slice(0, 8)}</p>
+                  <p className="text-xs text-muted-foreground mb-1">#{product.id.slice(0, 8).toUpperCase()}</p>
                   <h3 className="font-display font-semibold text-lg truncate">{product.name}</h3>
                   {product.description && (
                     <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{product.description}</p>
@@ -325,7 +336,7 @@ export default function PublicStorefront() {
                       </span>
                     )}
                   </div>
-                  <div className="mt-4 flex gap-2">
+                  <div className="mt-4 flex gap-2" onClick={(e) => e.stopPropagation()}>
                     <Button
                       size="sm"
                       variant="outline"

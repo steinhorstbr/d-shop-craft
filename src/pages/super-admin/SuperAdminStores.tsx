@@ -1,9 +1,9 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, Eye, ToggleLeft, ExternalLink } from "lucide-react";
+import { Building2, Eye, ToggleLeft, ExternalLink, LogIn } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -22,7 +22,6 @@ export default function SuperAdminStores() {
         .select("*, subscription_plans(name, is_trial)")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      // Fetch profiles for each store's user
       const userIds = storesData?.map(s => s.user_id) || [];
       const { data: profiles } = await supabase.from("profiles").select("user_id, full_name, email").in("user_id", userIds);
       return storesData?.map(s => ({
@@ -65,6 +64,7 @@ export default function SuperAdminStores() {
           <h1 className="text-3xl font-display font-bold text-foreground">Empresas</h1>
           <p className="text-muted-foreground mt-1">Gerencie as lojas cadastradas na plataforma</p>
         </div>
+        <Badge variant="outline" className="text-sm">{stores?.length || 0} lojas</Badge>
       </div>
 
       <Card className="border-border/50">
@@ -86,7 +86,7 @@ export default function SuperAdminStores() {
                   <TableHead>Plano</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Alterar Plano</TableHead>
-                  <TableHead className="w-32">Ações</TableHead>
+                  <TableHead className="w-36">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -97,7 +97,7 @@ export default function SuperAdminStores() {
                       <TableCell>
                         <div>
                           <span className="font-medium">{s.name}</span>
-                          <span className="text-xs text-muted-foreground block">#{s.id.slice(0, 8)}</span>
+                          <span className="text-xs text-muted-foreground block font-mono">#{s.id.slice(0, 8)}</span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -128,10 +128,36 @@ export default function SuperAdminStores() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8" title="Ver loja" onClick={() => window.open(`/loja/${s.id}`, "_blank")}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            title="Ver vitrine"
+                            onClick={() => window.open(`/loja/${s.id}`, "_blank")}
+                          >
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" title={s.is_active ? "Desativar" : "Ativar"} onClick={() => toggleActive(s.id, s.is_active)}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-primary"
+                            title="Entrar como admin da loja"
+                            onClick={() => {
+                              // Store the store context for impersonation view
+                              sessionStorage.setItem("superadmin_viewing_store", s.id);
+                              window.open(`/loja/${s.id}`, "_blank");
+                              toast.info(`Abrindo vitrine da loja: ${s.name}`);
+                            }}
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            title={s.is_active ? "Desativar loja" : "Ativar loja"}
+                            onClick={() => toggleActive(s.id, s.is_active)}
+                          >
                             <ToggleLeft className="w-4 h-4" />
                           </Button>
                         </div>

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { logAudit } from "@/lib/auditLog";
 
 export function useStoreQuery<T>(
   key: string,
@@ -33,7 +34,17 @@ export function useStoreQuery<T>(
 
 export function useStoreMutation(table: string, key: string) {
   const queryClient = useQueryClient();
-  const { storeId } = useAuth();
+  const { storeId, user } = useAuth();
+
+  // Determine entity type for audit
+  const entityType = (
+    table === "products" ? "product" :
+    table === "orders" ? "order" :
+    table === "filaments" ? "filament" :
+    table === "store_customers" ? "customer" :
+    table === "packaging" ? "packaging" :
+    table === "printers" ? "printer" : "product"
+  ) as "product" | "order" | "filament" | "customer" | "packaging" | "printer";
 
   const insertMutation = useMutation({
     mutationFn: async (values: Record<string, any>) => {
@@ -45,9 +56,12 @@ export function useStoreMutation(table: string, key: string) {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: [key] });
       toast.success("Cadastrado com sucesso!");
+      if (storeId && user?.id && data?.id) {
+        logAudit({ storeId, userId: user.id, entityType, entityId: data.id, action: "created", details: { name: data.name } });
+      }
     },
     onError: (error: any) => {
       toast.error("Erro: " + error.message);
@@ -65,9 +79,12 @@ export function useStoreMutation(table: string, key: string) {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: [key] });
       toast.success("Atualizado com sucesso!");
+      if (storeId && user?.id && data?.id) {
+        logAudit({ storeId, userId: user.id, entityType, entityId: data.id, action: "updated", details: { name: data.name } });
+      }
     },
     onError: (error: any) => {
       toast.error("Erro: " + error.message);
@@ -81,10 +98,14 @@ export function useStoreMutation(table: string, key: string) {
         .delete()
         .eq("id", id);
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (id: string) => {
       queryClient.invalidateQueries({ queryKey: [key] });
       toast.success("Removido com sucesso!");
+      if (storeId && user?.id) {
+        logAudit({ storeId, userId: user.id, entityType, entityId: id, action: "deleted" });
+      }
     },
     onError: (error: any) => {
       toast.error("Erro: " + error.message);
