@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard, Package, ShoppingCart, Users, Printer, Layers,
-  PackageOpen, Settings, LogOut, Box, Palette
+  PackageOpen, Settings, LogOut, Box, Palette, History, ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -17,11 +17,12 @@ const navItems = [
   { href: "/admin/filaments", label: "Filamentos", icon: Layers },
   { href: "/admin/packaging", label: "Embalagens", icon: PackageOpen },
   { href: "/admin/store-settings", label: "Loja", icon: Palette },
+  { href: "/admin/audit-log", label: "Histórico", icon: History },
   { href: "/admin/settings", label: "Configurações", icon: Settings },
 ];
 
 export default function StoreAdminLayout({ children }: { children: ReactNode }) {
-  const { signOut } = useAuth();
+  const { signOut, storeId } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -68,7 +69,17 @@ export default function StoreAdminLayout({ children }: { children: ReactNode }) 
           })}
         </nav>
 
-        <div className="p-4 border-t border-sidebar-border">
+        <div className="p-4 border-t border-sidebar-border space-y-1">
+          {storeId && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start text-sidebar-foreground hover:text-primary text-sm"
+              onClick={() => window.open(`/loja/${storeId}`, "_blank")}
+            >
+              <ExternalLink className="w-4 h-4 mr-2" /> Abrir Vitrine
+            </Button>
+          )}
           <Button
             variant="ghost"
             className="w-full justify-start text-sidebar-foreground hover:text-destructive"

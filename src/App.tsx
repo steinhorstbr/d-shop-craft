@@ -29,6 +29,8 @@ import StoreAdminFilaments from "./pages/store-admin/StoreAdminFilaments";
 import StoreAdminPackaging from "./pages/store-admin/StoreAdminPackaging";
 import StoreAdminStoreSettings from "./pages/store-admin/StoreAdminStoreSettings";
 import StoreAdminSettings from "./pages/store-admin/StoreAdminSettings";
+import StoreAdminAuditLog from "./pages/store-admin/StoreAdminAuditLog";
+import PublicProductPage from "./pages/PublicProductPage";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +45,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/loja/:storeId" element={<PublicStorefront />} />
+            <Route path="/loja/:storeId/produto/:productId" element={<PublicProductPage />} />
 
             {/* Super Admin */}
             <Route path="/super-admin" element={
@@ -110,6 +113,11 @@ const App = () => (
             <Route path="/admin/settings" element={
               <ProtectedRoute requiredRole="store_admin">
                 <StoreAdminLayout><StoreAdminSettings /></StoreAdminLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/audit-log" element={
+              <ProtectedRoute requiredRole="store_admin">
+                <StoreAdminLayout><StoreAdminAuditLog /></StoreAdminLayout>
               </ProtectedRoute>
             } />
 

@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, Pencil, Trash2, Calculator, Eye, EyeOff } from "lucide-react";
+import { Plus, Package, Pencil, Trash2, Calculator, Eye, EyeOff, Image } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -17,6 +17,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
+import ProductPhotoUpload from "@/components/ProductPhotoUpload";
+import STLFileUpload from "@/components/STLFileUpload";
 
 // Cost calculator component
 function CostCalculatorModal({ printers, filaments }: { printers: Tables<"printers">[]; filaments: Tables<"filaments">[] }) {
@@ -132,6 +134,7 @@ export default function StoreAdminProducts() {
     is_customizable: false, customization_type: "",
     category_id: "", production_cost: "", packaging_cost: "", post_production_cost: "",
     card_fee_percent: "", waste_rate_percent: "5",
+    photos: [] as string[], stl_file_url: null as string | null,
   });
 
   const { data: products, isLoading } = useStoreQuery<Tables<"products">>("products", "products");
@@ -160,6 +163,7 @@ export default function StoreAdminProducts() {
       is_customizable: false, customization_type: "",
       category_id: "", production_cost: "", packaging_cost: "", post_production_cost: "",
       card_fee_percent: "", waste_rate_percent: "5",
+      photos: [], stl_file_url: null,
     });
     setEditingId(null);
   };
@@ -183,6 +187,8 @@ export default function StoreAdminProducts() {
       post_production_cost: form.post_production_cost ? parseFloat(form.post_production_cost) : 0,
       card_fee_percent: form.card_fee_percent ? parseFloat(form.card_fee_percent) : 0,
       waste_rate_percent: form.waste_rate_percent ? parseFloat(form.waste_rate_percent) : 5,
+      photos: form.photos,
+      stl_file_url: form.stl_file_url,
     };
     if (editingId) {
       updateMutation.mutate({ id: editingId, ...payload }, { onSuccess: () => { setOpen(false); resetForm(); } });
@@ -207,6 +213,8 @@ export default function StoreAdminProducts() {
       post_production_cost: String(p.post_production_cost || ""),
       card_fee_percent: String(p.card_fee_percent || ""),
       waste_rate_percent: String(p.waste_rate_percent || "5"),
+      photos: p.photos || [],
+      stl_file_url: p.stl_file_url || null,
     });
     setEditingId(p.id);
     setOpen(true);
@@ -377,6 +385,21 @@ export default function StoreAdminProducts() {
                     </Select>
                   </div>
                 )}
+
+                <Separator />
+                <h4 className="font-display font-semibold text-sm flex items-center gap-2"><Image className="w-4 h-4" /> Fotos do Produto</h4>
+                <ProductPhotoUpload
+                  photos={form.photos}
+                  onChange={(photos) => setForm({ ...form, photos })}
+                  maxPhotos={6}
+                />
+
+                <Separator />
+                <h4 className="font-display font-semibold text-sm">Arquivo STL / 3MF</h4>
+                <STLFileUpload
+                  fileUrl={form.stl_file_url}
+                  onChange={(url) => setForm({ ...form, stl_file_url: url })}
+                />
 
                 <div className="flex items-center gap-3">
                   <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
