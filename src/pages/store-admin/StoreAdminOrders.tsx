@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ShoppingCart, Pencil, Trash2, CheckCircle } from "lucide-react";
+import { Plus, ShoppingCart, Pencil, Trash2, CheckCircle, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -165,6 +165,35 @@ export default function StoreAdminOrders() {
     }
     queryClient.invalidateQueries({ queryKey: ["orders"] });
     toast.success("Pedido concluído! Estoque de filamento atualizado.");
+  };
+
+  const handleEdit = async (order: any) => {
+    setForm({
+      customer_id: order.customer_id || "",
+      printer_id: order.printer_id || "",
+      filament_id: order.filament_id || "",
+      packaging_id: order.packaging_id || "",
+      production_status: order.production_status || "aguardando",
+      payment_status: order.payment_status || "aguardando",
+      production_notes: order.production_notes || "",
+      total_amount: String(order.total_amount || ""),
+    });
+    // Load order items
+    const { data: items } = await supabase.from("order_items").select("*").eq("order_id", order.id);
+    if (items && items.length > 0) {
+      setOrderItems(items.map((item: any) => ({
+        product_id: item.product_id || "",
+        quantity: String(item.quantity),
+        unit_price: String(item.unit_price),
+        color_selected: item.color_selected || "",
+        customization_text: item.customization_text || "",
+        notes: item.notes || "",
+      })));
+    } else {
+      setOrderItems([]);
+    }
+    setEditingId(order.id);
+    setOpen(true);
   };
 
   const updateOrderStatus = async (orderId: string, field: string, value: string) => {
@@ -373,6 +402,9 @@ export default function StoreAdminOrders() {
                       <TableCell className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleDateString("pt-BR")}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" title="Editar pedido" onClick={() => handleEdit(o)}>
+                            <Pencil className="w-4 h-4" />
+                          </Button>
                           {o.production_status !== "concluido" && (
                             <Button variant="ghost" size="icon" className="h-8 w-8" title="Marcar como concluído" onClick={() => handleComplete(o)}>
                               <CheckCircle className="w-4 h-4 text-success" />
