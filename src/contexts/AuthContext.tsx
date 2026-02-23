@@ -84,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -92,6 +92,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         emailRedirectTo: window.location.origin,
       },
     });
+
+    if (!error && data.user) {
+      // Manually create profile, role, and store since triggers are not set up
+      const userId = data.user.id;
+
+      // Create profile
+      await supabase.from("profiles").upsert({
+        user_id: userId,
+        full_name: fullName,
+        email,
+      }, { onConflict: "user_id" });
+
+      // Create store_admin role
+      await supabase.from("user_roles").upsert({
+        user_id: userId,
+        role: "store_admin" as const,
+      }, { onConflict: "user_id" });
+
+      // Get trial plan and create store
+      const { data: trialPlan } = await supabase
+        .from("subscription_plans")
+        .select("id")
+        .eq("is_trial", true)
+        .eq("is_active", true)
+        .limit(1)
+        .single();
+
+      await supabase.from("stores").insert({
+        user_id: userId,
+        name: "Minha Loja 3D",
+        subscription_plan_id: trialPlan?.id || null,
+        subscription_status: "trial",
+      });
+    }
+
     return { error: error as Error | null };
   };
 
